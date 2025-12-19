@@ -7,6 +7,7 @@
 
 plugins {
     application
+    alias(libs.plugins.champeau.jmh)
 }
 
 repositories {
