@@ -12,7 +12,7 @@ public class Simulator {
     }
 
     public Results simulate(Application application) {
-        final var parameters = new Parameters(new Input(totalInput));
+        final var parameters = new Parameters(new Input(totalInput), new Verifier());
         return application.execute(parameters);
     }
 }

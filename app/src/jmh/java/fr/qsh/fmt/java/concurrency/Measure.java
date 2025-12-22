@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @OutputTimeUnit(TimeUnit.SECONDS)
 public class Measure {
 
-    private static final long EVENT_COUNT = 10_000;
+    private static final long EVENT_COUNT = App.ITERATION_COUNT;
 
     private void measure(Application app, Blackhole blackhole) {
         final var simulator = new Simulator(EVENT_COUNT);
@@ -28,5 +28,10 @@ public class Measure {
     @Benchmark
     public void sequential(Blackhole blackhole) {
         measure(new App.Sequential(), blackhole);
+    }
+
+    @Benchmark
+    public void parallel(Blackhole blackhole) {
+        measure(new App.Parallel(), blackhole);
     }
 }

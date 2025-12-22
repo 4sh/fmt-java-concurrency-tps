@@ -8,10 +8,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class TestApp {
 
     @Test
-    void countIsCorrect() {
-        final var count = 1_000_000_000L;
+    void countIsCorrect_Sequential() {
+        final var count = App.ITERATION_COUNT;
         final var simulator = new Simulator(count);
         final var results = simulator.simulate(new App.Sequential());
+        assertEquals(count, results.receivedCount(), "After the simulation, the number of measured events is different than the number of events that were actually sent");
+    }
+
+    @Test
+    void countIsCorrect_Parallel() {
+        final var count = App.ITERATION_COUNT;
+        final var simulator = new Simulator(count);
+        final var results = simulator.simulate(new App.Parallel());
         assertEquals(count, results.receivedCount(), "After the simulation, the number of measured events is different than the number of events that were actually sent");
     }
 
