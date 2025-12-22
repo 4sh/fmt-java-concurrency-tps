@@ -2,12 +2,12 @@ package fr.qsh.fmt.java.concurrency;
 
 import fr.qsh.fmt.java.concurrency.simulation.Application;
 import fr.qsh.fmt.java.concurrency.simulation.Simulator;
+import fr.qsh.fmt.java.concurrency.simulation.Verifier;
 import net.jcip.annotations.GuardedBy;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -39,20 +39,26 @@ public class App {
     }
 
     public static class Parallel implements Application {
-        @GuardedBy("receivedLock")
+        @GuardedBy("this")
         private long receivedCount = 0;
-        private final Lock receivedLock = new ReentrantLock();
 
         @Override
         public Results execute(Parameters parameters) {
+            final Semaphore semaphore = new Semaphore(Verifier.MAX_CONCURRENCY);
             try (ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
                 parameters.input().onEvent(e -> service.execute(() -> {
-                    parameters.verifier().verify(e);
-                    receivedLock.lock();
                     try {
-                        receivedCount++;
+                        semaphore.acquire();
+                    } catch (InterruptedException ex) {
+                        Thread.currentThread().interrupt();
+                    }
+                    try {
+                        parameters.verifier().verify(e);
                     } finally {
-                        receivedLock.unlock();
+                        semaphore.release();
+                    }
+                    synchronized (this) {
+                        receivedCount++;
                     }
                 }));
             }
