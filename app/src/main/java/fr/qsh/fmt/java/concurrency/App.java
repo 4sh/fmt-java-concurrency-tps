@@ -6,6 +6,8 @@ import net.jcip.annotations.GuardedBy;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class App {
 
@@ -37,27 +39,18 @@ public class App {
     public static class Parallel implements Application {
         @GuardedBy("this")
         private long receivedCount = 0;
-        private final List<Thread> threads = new ArrayList<>();
 
         @Override
         public Results execute(Parameters parameters) {
-            parameters.input().onEvent(e -> {
-                final var thread = new Thread(() -> {
+            try (ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
+                parameters.input().onEvent(e -> service.execute(() -> {
                     parameters.verifier().verify(e);
                     synchronized (this) {
                         receivedCount++;
                     }
-                });
-                thread.start();
-                threads.add(thread);
-            });
-            for (Thread thread : threads) {
-                try {
-                    thread.join();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+                }));
             }
+            //noinspection FieldAccessNotGuarded After the ExecutorService is closed, there is no need for guarding anymore
             return new Results(receivedCount);
         }
     }
