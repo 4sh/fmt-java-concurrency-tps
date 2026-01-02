@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class App {
 
@@ -37,16 +39,20 @@ public class App {
     }
 
     public static class Parallel implements Application {
-        @GuardedBy("this")
+        @GuardedBy("receivedLock")
         private long receivedCount = 0;
+        private final Lock receivedLock = new ReentrantLock();
 
         @Override
         public Results execute(Parameters parameters) {
             try (ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
                 parameters.input().onEvent(e -> service.execute(() -> {
                     parameters.verifier().verify(e);
-                    synchronized (this) {
+                    receivedLock.lock();
+                    try {
                         receivedCount++;
+                    } finally {
+                        receivedLock.unlock();
                     }
                 }));
             }
