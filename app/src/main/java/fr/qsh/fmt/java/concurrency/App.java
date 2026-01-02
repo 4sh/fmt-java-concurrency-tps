@@ -2,6 +2,10 @@ package fr.qsh.fmt.java.concurrency;
 
 import fr.qsh.fmt.java.concurrency.simulation.Application;
 import fr.qsh.fmt.java.concurrency.simulation.Simulator;
+import net.jcip.annotations.GuardedBy;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class App {
 
@@ -31,9 +35,30 @@ public class App {
     }
 
     public static class Parallel implements Application {
+        @GuardedBy("this")
+        private long receivedCount = 0;
+        private final List<Thread> threads = new ArrayList<>();
+
         @Override
         public Results execute(Parameters parameters) {
-            return new Results(0); // TODO
+            parameters.input().onEvent(e -> {
+                final var thread = new Thread(() -> {
+                    parameters.verifier().verify(e);
+                    synchronized (this) {
+                        receivedCount++;
+                    }
+                });
+                thread.start();
+                threads.add(thread);
+            });
+            for (Thread thread : threads) {
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            return new Results(receivedCount);
         }
     }
 
