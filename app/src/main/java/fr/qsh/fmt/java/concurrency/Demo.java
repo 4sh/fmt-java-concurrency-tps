@@ -1,8 +1,13 @@
 package fr.qsh.fmt.java.concurrency;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
@@ -147,13 +152,38 @@ public class Demo {
         }
     }
 
+    private static final ExecutorService executor = Executors.newFixedThreadPool(10);
+
     private static Board simulateStep(Board board) {
         final Board newBoard = new Board(board.width, board.height);
+        final int regionXSize = board.width / 20;
+        final int regionYSize = board.height / 20;
+        final var taskList = new ArrayList<Future<?>>();
 
-        for (int x = 0; x < board.width; x++) {
-            for (int y = 0; y < board.height; y++) {
-                final Point p = new Point(x, y);
-                newBoard.setCellAt(p, board.nextStateOf(p));
+        for (int regionX = 0; regionX < 20; regionX++) {
+            for (int regionY = 0; regionY < 20; regionY++) {
+                final int startX = regionX * regionXSize;
+                final int endX = (regionX + 1) * regionXSize;
+                final int startY = regionY * regionYSize;
+                final int endY = (regionY + 1) * regionYSize;
+
+                final var task = executor.submit(() -> {
+                    for (int x = startX; x < endX; x++) {
+                        for (int y = startY; y < endY; y++) {
+                            final Point p = new Point(x, y);
+                            newBoard.setCellAt(p, board.nextStateOf(p));
+                        }
+                    }
+                });
+                taskList.add(task);
+            }
+        }
+
+        for (Future<?> task : taskList) {
+            try {
+                task.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException("Exception while waiting for region computation", e);
             }
         }
 
@@ -202,5 +232,6 @@ public class Demo {
         simulate(10);
 
         System.out.println("Total execution time: " + Duration.ofNanos(System.nanoTime() - startTime));
+        executor.close();
     }
 }
