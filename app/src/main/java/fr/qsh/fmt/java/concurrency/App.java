@@ -4,6 +4,7 @@ import fr.qsh.fmt.java.concurrency.simulation.Application;
 import fr.qsh.fmt.java.concurrency.simulation.Simulator;
 import fr.qsh.fmt.java.concurrency.simulation.Verifier;
 
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
@@ -21,14 +22,18 @@ public class App {
 
     public static class Sequential implements Application {
         private long receivedCount = 0;
+        private final HashMap<Integer, Long> eventsPerDoor = new HashMap<>();
 
         @Override
         public Results execute(Parameters parameters) {
             parameters.input().onEvent(e -> {
-                parameters.verifier().verify(e);
+                double result = parameters.verifier().verify(e);
+                if (result > 5) {
+                    eventsPerDoor.merge(e.doorId(), 1L, Long::sum);
+                }
                 receivedCount++;
             });
-            return new Results(receivedCount);
+            return new Results(receivedCount, eventsPerDoor);
         }
     }
 
@@ -43,7 +48,7 @@ public class App {
                     receivedCount.increment();
                 }));
             }
-            return new Results(receivedCount.intValue());
+            return new Results(receivedCount.intValue(), new HashMap<>());
         }
     }
 

@@ -1,6 +1,9 @@
 package fr.qsh.fmt.java.concurrency;
 
+import java.util.Map;
+
 public record Results(
-        long receivedCount
+        long receivedCount,
+        Map<Integer, Long> eventsPerDoor
 ) {
 }
