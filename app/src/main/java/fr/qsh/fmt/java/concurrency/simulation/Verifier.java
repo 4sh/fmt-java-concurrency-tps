@@ -12,7 +12,7 @@ public class Verifier {
 
     public Verifier() {}
 
-    public Event verify(Event event) {
+    public double verify(Event event) {
         final var currentThread = Thread.currentThread();
 
         synchronized (this) {
@@ -25,7 +25,7 @@ public class Verifier {
             }
         }
 
-        double score = event.id();
+        double score = event.eventId();
         // Non-trivial math to simulate a database check
         for (int i = 0; i < 100_000; i++) {
             score = Math.sqrt(Math.abs(Math.sin(score) * Math.cos(i) * 100));
@@ -33,7 +33,7 @@ public class Verifier {
 
         currentThreads.remove(currentThread.threadId());
 
-        return new Event((long) score);
+        return score;
     }
 
 }

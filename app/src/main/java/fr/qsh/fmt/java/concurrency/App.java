@@ -7,9 +7,6 @@ import net.jcip.annotations.GuardedBy;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class App {
 
@@ -27,11 +24,8 @@ public class App {
 
         @Override
         public Results execute(Parameters parameters) {
-            // Pour chaque événement en entrée…
             parameters.input().onEvent(e -> {
-                // on vérifie s'il est valide…
                 parameters.verifier().verify(e);
-                // on compte les événements vus…
                 receivedCount++;
             });
             return new Results(receivedCount);
@@ -44,19 +38,9 @@ public class App {
 
         @Override
         public Results execute(Parameters parameters) {
-            final Semaphore semaphore = new Semaphore(Verifier.MAX_CONCURRENCY);
-            try (ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
+            try (ExecutorService service = Executors.newFixedThreadPool(Verifier.MAX_CONCURRENCY)) {
                 parameters.input().onEvent(e -> service.execute(() -> {
-                    try {
-                        semaphore.acquire();
-                    } catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                    }
-                    try {
-                        parameters.verifier().verify(e);
-                    } finally {
-                        semaphore.release();
-                    }
+                    parameters.verifier().verify(e);
                     synchronized (this) {
                         receivedCount++;
                     }
