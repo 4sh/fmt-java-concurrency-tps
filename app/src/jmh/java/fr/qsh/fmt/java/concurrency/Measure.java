@@ -19,7 +19,7 @@ public class Measure {
     private static final long EVENT_COUNT = App.ITERATION_COUNT;
 
     private void measure(Application app, Blackhole blackhole) {
-        final var simulator = new Simulator(EVENT_COUNT);
+        final var simulator = new Simulator(EVENT_COUNT, blackhole::consume);
         final var results = simulator.simulate(app);
         assertEquals(EVENT_COUNT, results.receivedCount(), "After the simulation, the number of measured events is different than the number of events that were actually sent");
         blackhole.consume(results.receivedCount());

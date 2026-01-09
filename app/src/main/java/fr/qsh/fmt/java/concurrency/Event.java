@@ -1,9 +1,12 @@
 package fr.qsh.fmt.java.concurrency;
 
+import java.util.function.Consumer;
+
 public sealed interface Event {
 
-    int doorId();
     long eventId();
 
     record Ping(int doorId, long eventId) implements Event {}
+
+    record RegisterObserver(Consumer<Event> consumer, long eventId) implements Event {}
 }

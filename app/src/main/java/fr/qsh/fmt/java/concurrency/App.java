@@ -4,11 +4,14 @@ import fr.qsh.fmt.java.concurrency.simulation.Application;
 import fr.qsh.fmt.java.concurrency.simulation.Simulator;
 import fr.qsh.fmt.java.concurrency.simulation.Verifier;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Consumer;
 
 public class App {
 
@@ -24,13 +27,22 @@ public class App {
     public static class Sequential implements Application {
         private long receivedCount = 0;
         private final HashMap<Integer, Long> eventsPerDoor = new HashMap<>();
+        private final List<Consumer<Event>> observers = new ArrayList<>();
 
         @Override
         public Results execute(Parameters parameters) {
             parameters.input().onEvent(e -> {
-                double result = parameters.verifier().verify(e);
-                if (result > 5) {
-                    eventsPerDoor.merge(e.doorId(), 1L, Long::sum);
+                switch (e) {
+                    case Event.Ping ping -> {
+                        double result = parameters.verifier().verify(e);
+                        if (result > 5) {
+                            eventsPerDoor.merge(ping.doorId(), 1L, Long::sum);
+                        }
+                        if (result > 7) {
+                            observers.forEach(observer -> observer.accept(e));
+                        }
+                    }
+                    case Event.RegisterObserver register -> observers.add(register.consumer());
                 }
                 receivedCount++;
             });
@@ -46,10 +58,17 @@ public class App {
         public Results execute(Parameters parameters) {
             try (ExecutorService service = Executors.newFixedThreadPool(Verifier.MAX_CONCURRENCY)) {
                 parameters.input().onEvent(e -> service.execute(() -> {
-                    double result = parameters.verifier().verify(e);
-                    if (result > 5) {
-                        eventsPerDoor.computeIfAbsent(e.doorId(), k -> new LongAdder())
-                                .increment();
+                    switch (e) {
+                        case Event.Ping ping -> {
+                            double result = parameters.verifier().verify(e);
+                            if (result > 5) {
+                                eventsPerDoor.computeIfAbsent(ping.doorId(), k -> new LongAdder())
+                                        .increment();
+                            }
+                        }
+                        case Event.RegisterObserver register -> {
+                            // TODO
+                        }
                     }
                     receivedCount.increment();
                 }));
@@ -61,7 +80,7 @@ public class App {
     }
 
     public static void main(String[] args) {
-        final var simulator = new Simulator(ITERATION_COUNT);
+        final var simulator = new Simulator(ITERATION_COUNT, e -> System.err.println("Important event: " + e));
         simulator.simulate(new App.Parallel());
     }
 }
