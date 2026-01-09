@@ -5,6 +5,7 @@ import fr.qsh.fmt.java.concurrency.simulation.Simulator;
 import fr.qsh.fmt.java.concurrency.simulation.Verifier;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
@@ -39,16 +40,23 @@ public class App {
 
     public static class Parallel implements Application {
         private final LongAdder receivedCount = new LongAdder();
+        private final ConcurrentHashMap<Integer, LongAdder> eventsPerDoor = new ConcurrentHashMap<>();
 
         @Override
         public Results execute(Parameters parameters) {
             try (ExecutorService service = Executors.newFixedThreadPool(Verifier.MAX_CONCURRENCY)) {
                 parameters.input().onEvent(e -> service.execute(() -> {
-                    parameters.verifier().verify(e);
+                    double result = parameters.verifier().verify(e);
+                    if (result > 5) {
+                        eventsPerDoor.computeIfAbsent(e.doorId(), k -> new LongAdder())
+                                .increment();
+                    }
                     receivedCount.increment();
                 }));
             }
-            return new Results(receivedCount.intValue(), new HashMap<>());
+            final var resultsMap = new HashMap<Integer, Long>(eventsPerDoor.size());
+            eventsPerDoor.forEach((k, v) -> resultsMap.put(k, v.sum()));
+            return new Results(receivedCount.sum(), resultsMap);
         }
     }
 
