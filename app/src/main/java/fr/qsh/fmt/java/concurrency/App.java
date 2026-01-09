@@ -3,10 +3,10 @@ package fr.qsh.fmt.java.concurrency;
 import fr.qsh.fmt.java.concurrency.simulation.Application;
 import fr.qsh.fmt.java.concurrency.simulation.Simulator;
 import fr.qsh.fmt.java.concurrency.simulation.Verifier;
-import net.jcip.annotations.GuardedBy;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.LongAdder;
 
 public class App {
 
@@ -33,21 +33,17 @@ public class App {
     }
 
     public static class Parallel implements Application {
-        @GuardedBy("this")
-        private long receivedCount = 0;
+        private final LongAdder receivedCount = new LongAdder();
 
         @Override
         public Results execute(Parameters parameters) {
             try (ExecutorService service = Executors.newFixedThreadPool(Verifier.MAX_CONCURRENCY)) {
                 parameters.input().onEvent(e -> service.execute(() -> {
                     parameters.verifier().verify(e);
-                    synchronized (this) {
-                        receivedCount++;
-                    }
+                    receivedCount.increment();
                 }));
             }
-            //noinspection FieldAccessNotGuarded After the ExecutorService is closed, there is no need for guarding anymore
-            return new Results(receivedCount);
+            return new Results(receivedCount.intValue());
         }
     }
 
