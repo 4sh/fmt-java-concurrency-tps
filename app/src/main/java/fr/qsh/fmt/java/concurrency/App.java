@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.LongAdder;
@@ -53,6 +54,7 @@ public class App {
     public static class Parallel implements Application {
         private final LongAdder receivedCount = new LongAdder();
         private final ConcurrentHashMap<Integer, LongAdder> eventsPerDoor = new ConcurrentHashMap<>();
+        private final CopyOnWriteArrayList<Consumer<Event>> observers = new CopyOnWriteArrayList<>();
 
         @Override
         public Results execute(Parameters parameters) {
@@ -65,10 +67,11 @@ public class App {
                                 eventsPerDoor.computeIfAbsent(ping.doorId(), k -> new LongAdder())
                                         .increment();
                             }
+                            if (result > 7) {
+                                observers.forEach(observer -> observer.accept(e));
+                            }
                         }
-                        case Event.RegisterObserver register -> {
-                            // TODO
-                        }
+                        case Event.RegisterObserver register -> observers.add(register.consumer());
                     }
                     receivedCount.increment();
                 }));

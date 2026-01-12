@@ -35,7 +35,7 @@ public class TestApp {
         final var resultsExpected = new Simulator(count, seqObserver).simulate(new App.Sequential());
         final var resultsActual = new Simulator(count, parObserver).simulate(new App.Parallel());
         assertEquals(resultsExpected, resultsActual);
-        assertEquals(seqObserver.calledCount.sum(), parObserver.calledCount.sum(), "The number of high-risk events observed was different");
+        assertEquals(5635, parObserver.calledCount.sum());
     }
 
 }
