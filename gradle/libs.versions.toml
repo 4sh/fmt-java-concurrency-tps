@@ -4,10 +4,12 @@
 [versions]
 junit-jupiter = "5.12.1"
 jmh-champeau = "0.7.3"
+netty = "4.2.9.Final"
 
 [libraries]
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 jcip-annotations = { module = "net.jcip:jcip-annotations", version = "1.0" }
+netty = { module = "io.netty:netty-all", version.ref = "netty" }
 
 [plugins]
 champeau-jmh = { id = "me.champeau.jmh", version.ref = "jmh-champeau" }
