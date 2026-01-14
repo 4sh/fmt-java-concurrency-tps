@@ -16,6 +16,7 @@ repositories {
 
 dependencies {
     implementation(libs.jcip.annotations)
+    implementation(libs.netty)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -28,6 +29,19 @@ java {
 
 application {
     mainClass = "fr.qsh.fmt.java.concurrency.App"
+}
+
+// Configurer la tâche run pour afficher les logs en temps réel
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+    standardOutput = System.out
+    errorOutput = System.err
+
+    // Forcer l'affichage immédiat des logs sans bufferisation
+    jvmArgs = listOf(
+        "-Xms512m",
+        "-Xmx2g"
+    )
 }
 
 tasks.named<Test>("test") {

@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="STEP_1 - Client 10 000 conn" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="fr.qsh.fmt.java.network.LoadClient" />
+    <module name="fmt-java-concurrency-tps.app.main" />
+    <option name="PROGRAM_PARAMETERS" value="localhost 5042 10000" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="fr.qsh.fmt.java.network.step1.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
