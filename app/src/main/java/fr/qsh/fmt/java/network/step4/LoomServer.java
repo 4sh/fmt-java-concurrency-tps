@@ -60,7 +60,7 @@ public class LoomServer {
                         clientSocket.getRemoteSocketAddress());
 
                 /* FIXME-S04-01 Utiliser un thread vrtuel */
-                new Thread(() -> handleClient(clientSocket, connId)).start();
+                Thread.startVirtualThread(() -> handleClient(clientSocket, connId));
             }
         } catch (IOException e) {
             System.err.println("Erreur du serveur : " + e.getMessage());
