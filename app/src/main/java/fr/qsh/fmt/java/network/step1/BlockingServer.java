@@ -41,7 +41,7 @@ public class BlockingServer {
 
             while (true) {
                 /* FIXME-S01-01 Accepter une nouvelle connexion */
-                Socket clientSocket = ;
+                Socket clientSocket = serverSocket.accept();
                 int connId = totalConnections.incrementAndGet();
                 activeConnections.incrementAndGet();
 
@@ -74,6 +74,9 @@ public class BlockingServer {
             System.out.println("[Connexion #" + connId + "] Thread créé : " + Thread.currentThread().getName());
 
             /* FIXME-S01-02 lire le message depuis la socket et le renvoyer dans la socket */
+            in.lines()
+                    .filter(message -> !message.isEmpty())
+                    .forEach(out::println);
 
             System.out.println("[Connexion #" + connId + "] Client déconnecté");
 
