@@ -48,10 +48,11 @@ public class NioServer {
         // Créer et configurer le ServerSocketChannel
         ServerSocketChannel serverChannel = ServerSocketChannel.open();
         // FIXME-S02-01 Ecouter sur PORT et passer en mode non-bloquant
-
+        serverChannel.bind(new InetSocketAddress(PORT));
+        serverChannel.configureBlocking(false);
 
         // FIXME-S02-02 Enregistrer l'opération ACCEPT sur le Selector
-
+        serverChannel.register(selector, SelectionKey.OP_ACCEPT);
 
         System.out.println("✓ Serveur NIO démarré et en écoute...\n");
 
@@ -79,7 +80,13 @@ public class NioServer {
                     // FIXME-S02-02 Si un accept s'est produit, appeler handleAccept
                     // FIXME-S02-02 Si un read s'est produit, appeler handleRead
                     // FIXME-S02-02 Si un write s'est produit, appeler handleWrite
-
+                    if (key.isAcceptable()) {
+                        handleAccept(key, selector);
+                    } else if (key.isReadable()) {
+                        handleRead(key);
+                    } else if (key.isWritable()) {
+                        handleWrite(key);
+                    }
                 } catch (IOException e) {
                     System.err.println("Erreur lors du traitement : " + e.getMessage());
                     closeChannel(key);
@@ -93,8 +100,8 @@ public class NioServer {
      */
     private static void handleAccept(SelectionKey key, Selector selector) throws IOException {
         // FIXME-S02-03 Récupérer le canal serveur et accepter la connexion afin de récupérer le canal client
-        ServerSocketChannel serverChannel = ;
-        SocketChannel clientChannel = ;
+        ServerSocketChannel serverChannel = (ServerSocketChannel) key.channel();
+        SocketChannel clientChannel = serverChannel.accept();
 
         if (clientChannel != null) {
             int connId = totalConnections.incrementAndGet();
@@ -104,13 +111,13 @@ public class NioServer {
                     clientChannel.getRemoteAddress());
 
             // FIXME-S02-04 configurer le canal client en non bloquant
-
+            clientChannel.configureBlocking(false);
 
             // FIXME-S02-05 enregistrer l'opération READ sur le Selector
-            SelectionKey clientKey = ;
+            SelectionKey clientKey = clientChannel.register(selector, SelectionKey.OP_READ);
 
             // Attacher un état pour ce client
-            clientKey.attach(new ClientState());
+            clientKey.attach(new fr.qsh.fmt.java.network.step2.NioServer.ClientState());
         }
     }
 
@@ -119,10 +126,10 @@ public class NioServer {
      */
     private static void handleRead(SelectionKey key) throws IOException {
         SocketChannel clientChannel = (SocketChannel) key.channel();
-        ClientState state = (ClientState) key.attachment();
+        fr.qsh.fmt.java.network.step2.NioServer.ClientState state = (fr.qsh.fmt.java.network.step2.NioServer.ClientState) key.attachment();
 
         // FIXME-S02-06 lire les données du canal client dans le buffer
-        int bytesRead = ;
+        int bytesRead = clientChannel.read(state.readBuffer);
 
         if (bytesRead == -1) {
             // Client déconnecté
@@ -133,7 +140,7 @@ public class NioServer {
 
         if (bytesRead > 0) {
             // FIXME-S02-07 le buffer doit pouvoir faire de la lecture
-            state.readBuffer.;
+            state.readBuffer.flip();
 
             // Décoder les données reçues
             while (state.readBuffer.hasRemaining()) {
@@ -151,7 +158,7 @@ public class NioServer {
                         // Attacher le buffer de réponse et passer en mode WRITE
                         key.attach(writeBuffer);
                         // FIXME-S02-08 configurer la key pour être informé de la disponibilité de WRITE
-
+                        key.interestOps(SelectionKey.OP_WRITE);
                         return; // Sortir pour traiter l'écriture plus tard
                     }
                 } else {
@@ -172,14 +179,14 @@ public class NioServer {
         ByteBuffer writeBuffer = (ByteBuffer) key.attachment();
 
         // FIXME-S02-09 écrire les données du canal client dans le buffer
-
+        clientChannel.write(writeBuffer);
 
         if (!writeBuffer.hasRemaining()) {
             // Tout est écrit, revenir en mode READ
-            ClientState state = new ClientState();
+            fr.qsh.fmt.java.network.step2.NioServer.ClientState state = new fr.qsh.fmt.java.network.step2.NioServer.ClientState();
             key.attach(state);
             // FIXME-S02-10 configurer la key pour être informé de la disponibilité de READ
-
+            key.interestOps(SelectionKey.OP_READ);
         }
     }
 
