@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="STEP_4 - Server 10 000 conn" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="fr.qsh.fmt.java.network.step4.LoomServer" />
+    <module name="fmt-java-concurrency-tps.app.main" />
+    <option name="PROGRAM_PARAMETERS" value="4 10000" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="fr.qsh.fmt.java.network.step4.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
