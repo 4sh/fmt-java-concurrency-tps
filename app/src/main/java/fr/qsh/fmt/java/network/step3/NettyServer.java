@@ -44,16 +44,16 @@ public class NettyServer {
 
 
         // FIXME-S03-01 : Créer 1 event loop parent de 1 thread qui assurera les ACCEPT et une event loop enfant pour les opération I/0
-        EventLoopGroup bossGroup = ;
-        EventLoopGroup workerGroup = ;
+        EventLoopGroup bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
+        EventLoopGroup workerGroup = new MultiThreadIoEventLoopGroup(NioIoHandler.newFactory());
 
         try {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap
                     // FIXME-S03-02 : associer les event loop au serveur
-
+                    .group(bossGroup, workerGroup)
                     // FIXME-S03-03 : utiliser un canal NIO Serveur TCP
-
+                    .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) {
@@ -62,7 +62,12 @@ public class NettyServer {
                             // FIXME-S03-04 : - décoder le flux entrant en String
                             // FIXME-S03-04 : - Traiter le flux entrant par EchoHandler
                             // FIXME-S03-04 : - encoder le flux sortant vers du Byte
+                            ChannelPipeline pipeline = ch.pipeline();
 
+                            pipeline.addLast(new LineBasedFrameDecoder(1024));
+                            pipeline.addLast(new StringDecoder(StandardCharsets.UTF_8));
+                            pipeline.addLast(new StringEncoder(StandardCharsets.UTF_8));
+                            pipeline.addLast(new EchoHandler());
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
@@ -74,9 +79,9 @@ public class NettyServer {
             System.out.println("✓ Serveur Netty démarré et en écoute...\n");
 
             // FIXME-S03-06 écouter PORT et attendre que l'écoute soit effective
-
+            ChannelFuture future = bootstrap.bind(PORT).sync();
             // FIXME-S03-07 attendre que le canal serveur se ferme
-
+            future.channel().closeFuture().sync();
 
         } finally {
             // Arrêter proprement les EventLoopGroup
@@ -101,7 +106,9 @@ public class NettyServer {
         @Override
         protected void channelRead0(ChannelHandlerContext ctx, String message) {
             // FIXME-S03-05 si le message n'est pas vide, écrire le même message en réponse
-
+            if (!message.isEmpty()) {
+                ctx.writeAndFlush(message + "\n");
+            }
         }
 
         @Override
