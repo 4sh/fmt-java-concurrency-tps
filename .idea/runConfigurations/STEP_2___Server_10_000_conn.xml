@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="STEP_1 - Server 100 conn" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="fr.qsh.fmt.java.network.step1.BlockingServer" />
+  <configuration default="false" name="STEP_2 - Server 10 000 conn" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="fr.qsh.fmt.java.network.step2.NioServer" />
     <module name="fmt-java-concurrency-tps.app.main" />
-    <option name="PROGRAM_PARAMETERS" value="1 100" />
+    <option name="PROGRAM_PARAMETERS" value="2 10000" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="fr.qsh.fmt.java.network.step1.*" />
